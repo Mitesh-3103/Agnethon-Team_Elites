@@ -74,7 +74,7 @@ http://127.0.0.1:8000/
 ```
 
 ## VIDEO LINK
-VIDEO link : [ https://drive.google.com/file/d/1Mr1NoTYd7mrvnzVJ_IwXX746SKeiLVgX/view?usp=drive_link ]
+VIDEO link : [ https://youtu.be/wPqmiKKqrAs?feature=shared ]
 
 
 
