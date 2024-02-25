@@ -61,3 +61,71 @@ def my_request_view(request):
     patient= models.Patient.objects.get(user_id=request.user.id)
     blood_request=bmodels.BloodRequest.objects.all().filter(request_by_patient=patient)
     return render(request,'patient/my_request.html',{'blood_request':blood_request})
+
+# new changes
+
+import openpyxl
+import os
+from django.shortcuts import render, redirect
+from . import forms, models
+from django.contrib.auth.models import Group
+from django.http import HttpResponseRedirect
+from blood import forms as bforms
+from blood import models as bmodels
+
+def write_to_excel(data, excel_file):
+    workbook = None
+    if os.path.exists(excel_file):
+        workbook = openpyxl.load_workbook(excel_file)
+    else:
+        workbook = openpyxl.Workbook()
+        headers = [
+            'First Name', 'Last Name', 'Username', 
+            'Blood Group', 'Address', 'Mobile'
+        ]
+        sheet = workbook.active
+        sheet.append(headers)
+
+    sheet = workbook.active
+    for row_data in data:
+        sheet.append(row_data)
+
+    workbook.save(excel_file)
+
+def patient_signup_view(request):
+    userForm = forms.PatientUserForm()
+    patientForm = forms.PatientForm()
+    mydict = {'userForm': userForm, 'patientForm': patientForm}
+    
+    if request.method == 'POST':
+        userForm = forms.PatientUserForm(request.POST)
+        patientForm = forms.PatientForm(request.POST, request.FILES)
+        
+        if userForm.is_valid() and patientForm.is_valid():
+            user = userForm.save(commit=False)
+            user.set_password(user.password)
+            user.save()
+            
+            patient = patientForm.save(commit=False)
+            patient.user = user
+            patient.save()
+            
+            # Write data to Excel
+            data = [
+                [
+                    user.first_name,
+                    user.last_name,
+                    user.username,
+                    patient.bloodgroup,
+                    patient.address,
+                    patient.mobile,
+                ]
+            ]
+            write_to_excel(data, 'patient_data.xlsx')  # Call write_to_excel function here
+            
+            my_patient_group = Group.objects.get_or_create(name='PATIENT')
+            my_patient_group[0].user_set.add(user)
+            
+            return HttpResponseRedirect('patientlogin')
+    
+    return render(request, 'patient/patientsignup.html', context=mydict)
