@@ -73,11 +73,6 @@ py manage.py runserver
 http://127.0.0.1:8000/
 ```
 
-## PROJECT LINK
-PROJECT link : [ https://mitesh-3103.github.io/Agnethon-Team_Elites/ ]
-
-
-
 ## VIDEO LINK
 VIDEO link : [ https://drive.google.com/file/d/1Mr1NoTYd7mrvnzVJ_IwXX746SKeiLVgX/view?usp=drive_link ]
 
