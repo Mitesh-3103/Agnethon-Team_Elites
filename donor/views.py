@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render,redirect,reverse
 from . import forms,models
 from django.db.models import Sum,Q
@@ -78,3 +79,72 @@ def request_history_view(request):
     donor= models.Donor.objects.get(user_id=request.user.id)
     blood_request=bmodels.BloodRequest.objects.all().filter(request_by_donor=donor)
     return render(request,'donor/request_history.html',{'blood_request':blood_request})
+
+
+# new changes
+
+from django.shortcuts import render, redirect
+from . import forms, models
+from django.contrib.auth.models import Group
+from django.http import HttpResponseRedirect
+from blood import forms as bforms
+from blood import models as bmodels
+
+import openpyxl
+
+def write_to_excel(data, excel_file):
+    if os.path.exists(excel_file):
+        workbook = openpyxl.load_workbook(excel_file)
+        sheet = workbook.active
+    else:
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        
+        headers = [
+            'First Name', 'Last Name', 'Username', 
+            'Blood Group', 'Address', 'Mobile'
+        ]
+        sheet.append(headers)  # Append headers only when the workbook is created
+    
+    for row_data in data:
+        sheet.append(row_data)  # Append data to the sheet
+    
+    workbook.save(excel_file)
+
+def donor_signup_view(request):
+    userForm = forms.DonorUserForm()
+    donorForm = forms.DonorForm()
+    mydict = {'userForm': userForm, 'donorForm': donorForm}
+    
+    if request.method == 'POST':
+        userForm = forms.DonorUserForm(request.POST)
+        donorForm = forms.DonorForm(request.POST, request.FILES)
+        
+        if userForm.is_valid() and donorForm.is_valid():
+            user = userForm.save(commit=False)
+            user.set_password(user.password)
+            user.save()
+            
+            donor = donorForm.save(commit=False)
+            donor.user = user
+            donor.save()
+            
+            # Write data to Excel
+            data = [
+                [
+                    user.first_name,
+                    user.last_name,
+                    user.username,
+                    donor.bloodgroup,
+                    donor.address,
+                    donor.mobile,
+                ]
+            ]
+            write_to_excel(data, 'user_data.xlsx')  # Call write_to_excel function here
+            
+            my_donor_group = Group.objects.get_or_create(name='DONOR')
+            my_donor_group[0].user_set.add(user)
+            
+            return HttpResponseRedirect('donorlogin')
+    
+    return render(request, 'donor/donorsignup.html', context=mydict)
